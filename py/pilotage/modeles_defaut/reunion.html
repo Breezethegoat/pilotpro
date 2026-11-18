@@ -1,0 +1,72 @@
+{% extends "_document.html" %}
+{% block titre %}Ordre du jour du {{ date }}{% endblock %}
+{% block entete %}Réunion de pilotage : ordre du jour{% endblock %}
+{% block corps %}
+<p><b>{{ stats.ouvertes }}</b> actions ouvertes, <b class="rouge">{{ stats.en_retard }}</b> en retard, <b class="orange">{{ stats.proches }}</b> à échéance proche.
+Taux de réalisation : <b>{{ stats.taux_realisation|pourcent }}</b>. Respect des délais : <b>{{ stats.taux_delais|pourcent }}</b>.</p>
+
+<h2>1. Ce qui a bougé depuis le dernier point</h2>
+{% if evolutions %}
+<table>
+{% for e in evolutions %}
+<tr><td><b>{{ e.num }}</b></td><td>{% if e.type == "realisee" %}Réalisée{% elif e.type == "echeance" %}Échéance modifiée{% elif e.type == "responsable" %}Responsable modifié{% else %}Disparue du classeur{% endif %}</td>
+<td>{% if e.avant or e.apres %}{{ e.avant or "—" }} → {{ e.apres or "—" }}{% endif %}</td></tr>
+{% endfor %}
+</table>
+{% else %}<p class="vide">Aucune évolution enregistrée.</p>{% endif %}
+
+<h2>2. Actions en retard : que fait-on ?</h2>
+{% if retard %}
+<table>
+<tr><th></th><th>Action</th><th>Responsable</th><th class="n">Retard</th><th>Décision (nouvelle date, aide, abandon)</th></tr>
+{% for a in retard %}
+<tr><td><span class="case"></span></td><td><b>{{ a.num }}</b> {{ a.libelle }}</td><td>{{ a.responsables or "—" }}</td><td class="n rouge">{{ a.jours_retard }} j</td><td style="width:32%"></td></tr>
+{% endfor %}
+</table>
+{% else %}<p class="vide">Aucune action en retard.</p>{% endif %}
+
+<h2>3. Blocages à lever</h2>
+{% if bloquees %}
+<table>
+{% for a in bloquees %}
+<tr><td><span class="case"></span></td><td><b>{{ a.num }}</b> {{ a.libelle }}</td><td>{{ a.responsables or "—" }}</td><td style="width:32%"></td></tr>
+{% endfor %}
+</table>
+{% else %}<p class="vide">Aucune action bloquée.</p>{% endif %}
+
+<h2>4. Échéances des prochains jours</h2>
+{% if proches %}
+<table>
+{% for a in proches %}
+<tr><td><b>{{ a.num }}</b> {{ a.libelle }}</td><td>{{ a.responsables or "—" }}</td><td class="orange">{{ a.echeance }}</td></tr>
+{% endfor %}
+</table>
+{% else %}<p class="vide">Aucune échéance proche.</p>{% endif %}
+
+<h2>5. Risques à surveiller</h2>
+{% if risques_majeurs %}
+<table>
+{% for r in risques_majeurs %}
+<tr><td><b>{{ r.num }}</b> {{ r.intitule }}</td><td class="{% if r.niveau == 'Critique' %}rouge{% else %}orange{% endif %}">{{ r.niveau }}</td><td>{{ r.proprietaires or "sans propriétaire" }}</td></tr>
+{% endfor %}
+</table>
+{% else %}<p class="vide">Aucun risque critique ou élevé.</p>{% endif %}
+
+<h2>6. Décisions à prendre</h2>
+{% if a_attribuer or questions_sans or questions %}
+<table>
+{% for a in a_attribuer %}
+<tr><td><span class="case"></span></td><td>Qui prend l'action <b>{{ a.num }}</b> : {{ a.libelle }} ?</td></tr>
+{% endfor %}
+{% for q in questions_sans %}
+<tr><td><span class="case"></span></td><td>Qui instruit la question <b>{{ q.num }}</b> : {{ q.intitule }} ?</td></tr>
+{% endfor %}
+{% for q in questions %}
+<tr><td><span class="case"></span></td><td>Trancher <b>{{ q.num }}</b> : {{ q.intitule }} <span class="doux">({{ q.responsables }}{% if q.echeance %}, pour le {{ q.echeance }}{% endif %})</span></td></tr>
+{% endfor %}
+</table>
+{% else %}<p class="vide">Rien à décider cette semaine.</p>{% endif %}
+
+<h2>7. Tour de table et notes</h2>
+<div class="lignes"><div></div><div></div><div></div><div></div><div></div></div>
+{% endblock %}

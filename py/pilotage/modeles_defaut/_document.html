@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>{% block titre %}{% endblock %}</title>
+<style>
+@page { size: A4; margin: 16mm 15mm; }
+* { box-sizing: border-box; }
+body { font-family: "Segoe UI", Arial, sans-serif; font-size: 10.5pt; color: #2b3352; margin: 0; line-height: 1.45; }
+header { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #2a2d42; padding-bottom: 8px; margin-bottom: 14px; }
+header h1 { font-size: 20pt; margin: 0; }
+header .marque { font-weight: 700; color: #5469ff; }
+h2 { font-size: 12.5pt; margin: 18px 0 6px; padding-left: 8px; border-left: 4px solid #5469ff; break-after: avoid; }
+table { border-collapse: collapse; width: 100%; margin-bottom: 4px; }
+th, td { text-align: left; padding: 4px 7px; border-bottom: 1px solid #e3e6ef; vertical-align: top; }
+th { font-size: 8.5pt; text-transform: uppercase; color: #7a8199; letter-spacing: .03em; }
+tr { break-inside: avoid; }
+.n { text-align: right; white-space: nowrap; }
+.tuiles { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.tuile { border: 1px solid #e3e6ef; border-radius: 8px; padding: 8px 10px; }
+.tuile b { display: block; font-size: 17pt; }
+.tuile span { font-size: 8.5pt; color: #7a8199; }
+.rouge { color: #d6336c; } .vert { color: #1a9a6c; } .orange { color: #c9740d; } .doux { color: #7a8199; }
+.jauge { display: inline-block; width: 90px; height: 8px; border-radius: 4px; background: #e3e6ef; vertical-align: middle; overflow: hidden; }
+.jauge i { display: block; height: 100%; background: #22b37f; }
+.vide { color: #7a8199; font-style: italic; margin: 2px 0 6px; }
+.case { display: inline-block; width: 11px; height: 11px; border: 1.5px solid #2b3352; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+.lignes div { border-bottom: 1px solid #c9cedd; height: 24px; }
+footer { margin-top: 18px; font-size: 8.5pt; color: #7a8199; }
+</style>
+</head>
+<body>
+<header><h1>{% block entete %}{% endblock %}</h1><div><span class="marque">PilotPro</span> · {{ date }}</div></header>
+{% block corps %}{% endblock %}
+<footer>Document généré par PilotPro à partir des classeurs de pilotage, le {{ date }}.</footer>
+</body>
+</html>

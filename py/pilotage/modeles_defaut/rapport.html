@@ -1,0 +1,66 @@
+{% extends "_document.html" %}
+{% block titre %}Rapport de pilotage du {{ date }}{% endblock %}
+{% block entete %}Rapport de pilotage{% endblock %}
+{% block corps %}
+<h2>Chiffres clés</h2>
+<div class="tuiles">
+  <div class="tuile"><b>{{ stats.ouvertes }}</b><span>actions ouvertes sur {{ stats.total }}</span></div>
+  <div class="tuile"><b class="rouge">{{ stats.en_retard }}</b><span>en retard · {{ stats.proches }} proche(s)</span></div>
+  <div class="tuile"><b class="vert">{{ stats.taux_realisation|pourcent }}</b><span>taux de réalisation ({{ stats.realisees }} réalisées)</span></div>
+  <div class="tuile"><b>{{ stats.taux_delais|pourcent }}</b><span>respect des délais</span></div>
+</div>
+
+<h2>Avancement du plan</h2>
+{% if volets %}
+<table>
+<tr><th>Volet</th><th class="n">Tâches</th><th class="n">Réalisées</th><th class="n">En retard</th><th>Avancement</th></tr>
+{% for v in volets %}
+<tr><td>{{ v.nom }}</td><td class="n">{{ v.taches }}</td><td class="n">{{ v.realisees }}</td>
+<td class="n {% if v.retard %}rouge{% endif %}">{{ v.retard }}</td>
+<td><span class="jauge"><i style="width:{{ v.avancement }}%"></i></span> {{ v.avancement }} %</td></tr>
+{% endfor %}
+</table>
+{% else %}<p class="vide">Aucune tâche lue dans le plan.</p>{% endif %}
+
+<h2>Charge par responsable</h2>
+{% if responsables %}
+<table>
+<tr><th>Responsable</th><th class="n">Actions ouvertes</th><th class="n">En retard</th></tr>
+{% for nom, v in responsables %}
+<tr><td>{{ nom }}</td><td class="n">{{ v.ouvertes }}</td><td class="n {% if v.en_retard %}rouge{% endif %}">{{ v.en_retard }}</td></tr>
+{% endfor %}
+</table>
+{% else %}<p class="vide">Aucune action ouverte.</p>{% endif %}
+
+<h2>Actions en retard</h2>
+{% if retard %}
+<table>
+<tr><th>N°</th><th>Action</th><th>Responsable</th><th>Échéance</th><th class="n">Retard</th></tr>
+{% for a in retard %}
+<tr><td>{{ a.num }}</td><td>{{ a.libelle }}</td><td>{{ a.responsables or "—" }}</td><td>{{ a.echeance }}</td><td class="n rouge">{{ a.jours_retard }} j</td></tr>
+{% endfor %}
+</table>
+{% else %}<p class="vide">Aucune action en retard.</p>{% endif %}
+
+<h2>Risques majeurs ({{ risques_majeurs|length }} sur {{ nb_risques }} ouverts)</h2>
+{% if risques_majeurs %}
+<table>
+<tr><th>N°</th><th>Risque</th><th>Niveau</th><th>Propriétaire</th><th>Échéance des mesures</th></tr>
+{% for r in risques_majeurs %}
+<tr><td>{{ r.num }}</td><td>{{ r.intitule }}</td><td class="{% if r.niveau == 'Critique' %}rouge{% else %}orange{% endif %}"><b>{{ r.niveau }}</b></td>
+<td>{{ r.proprietaires or "—" }}</td><td>{{ r.echeance or "—" }}</td></tr>
+{% endfor %}
+</table>
+{% else %}<p class="vide">Aucun risque critique ou élevé.</p>{% endif %}
+
+{% if tendances|length > 1 %}
+<h2>Tendance</h2>
+<table>
+<tr><th>Date</th><th class="n">Ouvertes</th><th class="n">En retard</th><th class="n">Réalisation</th><th class="n">Délais</th><th class="n">Plan</th></tr>
+{% for p in tendances %}
+<tr><td>{{ p.date[8:] }}/{{ p.date[5:7] }}/{{ p.date[:4] }}</td><td class="n">{{ p.ouvertes }}</td><td class="n">{{ p.en_retard }}</td>
+<td class="n">{{ p.taux_realisation|pourcent }}</td><td class="n">{{ p.taux_delais|pourcent }}</td><td class="n">{{ p.avancement_plan|pourcent }}</td></tr>
+{% endfor %}
+</table>
+{% endif %}
+{% endblock %}

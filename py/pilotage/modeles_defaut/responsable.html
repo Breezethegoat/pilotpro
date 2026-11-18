@@ -1,0 +1,63 @@
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;">
+<p>Bonjour {{ prenom }},</p>
+<p>Voici votre point de pilotage du {{ date }}.</p>
+{% if actions %}
+<h3 style="font-size:15px;margin:16px 0 6px;">Mes actions</h3>
+<table style="border-collapse:collapse;width:100%;">
+<tr style="background:#f2f2f2;text-align:left;">
+<th style="padding:4px 8px;border:1px solid #ddd;">N°</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Action</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Échéance</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Statut</th>
+<th style="padding:4px 8px;border:1px solid #ddd;"></th>
+</tr>
+{% for a in actions %}
+<tr>
+<td style="padding:4px 8px;border:1px solid #ddd;">{% if a.lien %}<a href="{{ a.lien }}" style="color:#2471a3;">{{ a.num }}</a>{% else %}{{ a.num }}{% endif %}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ a.libelle }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ a.echeance }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ a.statut }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{% if a.etiquette == "En retard" %}<b style="color:#c0392b;">En retard{% if a.jours_retard %} ({{ a.jours_retard }} j){% endif %}</b>{% elif a.etiquette == "Proche" %}<b style="color:#d35400;">Proche</b>{% elif a.etiquette == "Nouvelle" %}<b style="color:#2471a3;">Nouvelle</b>{% endif %}</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+{% if risques %}
+<h3 style="font-size:15px;margin:16px 0 6px;">Mes risques</h3>
+<table style="border-collapse:collapse;width:100%;">
+<tr style="background:#f2f2f2;text-align:left;">
+<th style="padding:4px 8px;border:1px solid #ddd;">N°</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Risque</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Niveau</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Échéance des mesures</th>
+</tr>
+{% for r in risques %}
+<tr>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ r.num }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ r.intitule }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ r.niveau }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ r.echeance }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+{% if questions %}
+<h3 style="font-size:15px;margin:16px 0 6px;">Mes questions ouvertes</h3>
+<table style="border-collapse:collapse;width:100%;">
+<tr style="background:#f2f2f2;text-align:left;">
+<th style="padding:4px 8px;border:1px solid #ddd;">N°</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Question</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Échéance</th>
+</tr>
+{% for q in questions %}
+<tr>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ q.num }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ q.intitule }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ q.echeance }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+<p style="margin-top:16px;">Merci de mettre à jour le classeur si l'un de ces points a évolué.{% if lien_classeur %} <a href="{{ lien_classeur }}" style="color:#2471a3;">Ouvrir le classeur</a>{% endif %}</p>
+<p>Cordialement</p>
+</div>

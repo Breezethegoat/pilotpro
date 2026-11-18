@@ -1,0 +1,1 @@
+Récapitulatif pilotage du {{ date }}

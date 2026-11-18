@@ -1,0 +1,79 @@
+<div style="font-family:Arial,Helvetica,sans-serif;font-size:14px;color:#222;">
+<p>Bonjour,</p>
+<p>Voici le récapitulatif du pilotage au {{ date }}. {{ stats.total }} actions suivies.</p>
+<h3 style="font-size:15px;margin:16px 0 6px;">Chiffres clés</h3>
+<table style="border-collapse:collapse;">
+<tr><td style="padding:4px 8px;border:1px solid #ddd;">Actions ouvertes</td><td style="padding:4px 8px;border:1px solid #ddd;">{{ stats.ouvertes }}</td></tr>
+<tr><td style="padding:4px 8px;border:1px solid #ddd;">À attribuer</td><td style="padding:4px 8px;border:1px solid #ddd;">{{ stats.a_attribuer }}</td></tr>
+<tr><td style="padding:4px 8px;border:1px solid #ddd;">En cours</td><td style="padding:4px 8px;border:1px solid #ddd;">{{ stats.en_cours }}</td></tr>
+<tr><td style="padding:4px 8px;border:1px solid #ddd;">Bloquées</td><td style="padding:4px 8px;border:1px solid #ddd;">{{ stats.bloquees }}</td></tr>
+<tr><td style="padding:4px 8px;border:1px solid #ddd;">Réalisées</td><td style="padding:4px 8px;border:1px solid #ddd;">{{ stats.realisees }}</td></tr>
+<tr><td style="padding:4px 8px;border:1px solid #ddd;color:#c0392b;"><b>En retard</b></td><td style="padding:4px 8px;border:1px solid #ddd;">{{ stats.en_retard }}</td></tr>
+<tr><td style="padding:4px 8px;border:1px solid #ddd;color:#d35400;"><b>Proches</b></td><td style="padding:4px 8px;border:1px solid #ddd;">{{ stats.proches }}</td></tr>
+<tr><td style="padding:4px 8px;border:1px solid #ddd;color:#2471a3;"><b>Nouvelles</b></td><td style="padding:4px 8px;border:1px solid #ddd;">{{ stats.nouvelles }}</td></tr>
+<tr><td style="padding:4px 8px;border:1px solid #ddd;">Taux de réalisation</td><td style="padding:4px 8px;border:1px solid #ddd;">{{ stats.taux_realisation|pourcent }}</td></tr>
+<tr><td style="padding:4px 8px;border:1px solid #ddd;">Taux de respect des délais</td><td style="padding:4px 8px;border:1px solid #ddd;">{{ stats.taux_delais|pourcent }}</td></tr>
+</table>
+{% if evolutions %}
+<h3 style="font-size:15px;margin:16px 0 6px;">Évolutions depuis le dernier envoi</h3>
+<table style="border-collapse:collapse;width:100%;">
+<tr style="background:#f2f2f2;text-align:left;">
+<th style="padding:4px 8px;border:1px solid #ddd;">Action</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Changement</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Avant</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Après</th>
+</tr>
+{% for e in evolutions %}
+<tr>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ e.num }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{% if e.type == "realisee" %}Réalisée{% elif e.type == "echeance" %}Échéance modifiée{% elif e.type == "responsable" %}Responsable modifié{% else %}Disparue du classeur{% endif %}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ e.avant }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ e.apres }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+{% if modifs_plan %}
+<h3 style="font-size:15px;margin:16px 0 6px;">Modifications du plan</h3>
+<table style="border-collapse:collapse;width:100%;">
+<tr style="background:#f2f2f2;text-align:left;">
+<th style="padding:4px 8px;border:1px solid #ddd;">Tâche</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Avancement</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Statut</th>
+<th style="padding:4px 8px;border:1px solid #ddd;">Réalisée le</th>
+</tr>
+{% for m in modifs_plan %}
+<tr>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ m.num }} – {{ m.libelle }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ m.avancement }} %</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ m.statut }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ m.date_realisation }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+{% if questions_sans_responsable %}
+<h3 style="font-size:15px;margin:16px 0 6px;">Questions ouvertes sans responsable</h3>
+<table style="border-collapse:collapse;width:100%;">
+{% for q in questions_sans_responsable %}
+<tr>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ q.num }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ q.intitule }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+{% if anomalies %}
+<h3 style="font-size:15px;margin:16px 0 6px;">Anomalies</h3>
+<table style="border-collapse:collapse;width:100%;">
+{% for a in anomalies %}
+<tr>
+<td style="padding:4px 8px;border:1px solid #ddd;color:#c0392b;">{{ a.type }}</td>
+<td style="padding:4px 8px;border:1px solid #ddd;">{{ a.message }}</td>
+</tr>
+{% endfor %}
+</table>
+{% endif %}
+<p style="margin-top:16px;">{{ nb_mails }} mails préparés.</p>
+<p>Cordialement</p>
+</div>
