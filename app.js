@@ -81,9 +81,27 @@ async function occupe(texte, fn) {
 }
 
 function ouvrir(url) {
+  // Android : rappel ouvert dans WhatsApp « classique » (com.whatsapp), jamais WhatsApp Business.
+  // Si WhatsApp n'est pas installé, Chrome revient au lien wa.me habituel.
+  if (/Android/i.test(navigator.userAgent) && url.startsWith("https://wa.me/")) {
+    const u = new URL(url);
+    location.href = "intent://send/?phone=" + u.pathname.slice(1) + "&text=" + encodeURIComponent(u.searchParams.get("text") || "")
+      + "#Intent;scheme=whatsapp;package=com.whatsapp;S.browser_fallback_url=" + encodeURIComponent(url) + ";end";
+    return;
+  }
   const f = window.open(url, "_blank", "noopener");
   if (!f) location.href = url;
 }
+
+/* ---------- dernière analyse gardée sur le téléphone ----------
+   À l'ouverture, elle s'affiche tout de suite pendant que le moteur démarre et relit les classeurs. */
+const CLE_ANALYSE = "pilotpro-analyse", CLE_MOTEUR_VU = "pilotpro-moteur-vu";
+const memoire = {
+  lire: (cle) => { try { return JSON.parse(localStorage.getItem(cle) || "null"); } catch { return null; } },
+  ecrire: (cle, v) => { try { localStorage.setItem(cle, JSON.stringify(v)); } catch { /* stockage plein ou indisponible */ } },
+  effacer: (cle) => { try { localStorage.removeItem(cle); } catch { /* idem */ } },
+};
+let MOTEUR_PRET = null;  // promesse : moteur démarré et classeurs relus (true), ou échec (false)
 
 /* ---------- moteur (worker Python) ---------- */
 const moteur = (() => {
@@ -94,7 +112,17 @@ const moteur = (() => {
   return { envoyer: (msg) => new Promise((ok) => { const id = ++n; attente.set(id, ok); w.postMessage({ id, ...msg }); }) };
 })();
 
+/* Appel normal : attend que le moteur soit prêt (il peut encore démarrer en arrière-plan). */
 async function appel(nom, ...args) {
+  if (!MOTEUR_PRET || !(await MOTEUR_PRET)) {
+    MOTEUR_PRET = preparer();
+    if (!(await MOTEUR_PRET)) return null;
+    if (nom === "analyser") return S.analyse;  // la préparation vient de relire les classeurs
+  }
+  return appelDirect(nom, ...args);
+}
+
+async function appelDirect(nom, ...args) {
   effacerErreur();
   let jeton = "";
   if (!S.demo) {
@@ -140,32 +168,70 @@ async function demarrer() {
 }
 
 async function lancer() {
-  ecran("attente");
-  $("attente-texte").textContent = "Démarrage du moteur… (la première fois, comptez une minute : il est ensuite gardé sur le téléphone)";
-  let r;
-  if (S.demo) r = await moteur.envoyer({ type: "demo" });
-  else {
-    let jeton;
-    try { jeton = await AUTH.jeton(); } catch (e) {
-      return versConnexion(e.reconnexion ? "Votre connexion Microsoft a expiré : reconnectez-vous." : "Impossible de joindre Microsoft : vérifiez la connexion Internet.");
+  const garde = S.demo ? null : memoire.lire(CLE_ANALYSE);
+  if (garde) {  // ouverture immédiate sur la dernière analyse, mise à jour en arrière-plan
+    S.analyse = garde;
+    ecran("appli");
+    afficher();
+  } else {
+    ecran("attente");
+    $("attente-texte").textContent = memoire.lire(CLE_MOTEUR_VU) ? "Démarrage…"
+      : "Démarrage du moteur… (la première fois, comptez une minute : il est ensuite gardé sur le téléphone)";
+  }
+  MOTEUR_PRET = preparer();
+  await MOTEUR_PRET;
+}
+
+/* Démarre le moteur puis relit les classeurs. Renvoie true si tout est prêt. */
+async function preparer() {
+  S.miseAJour = true;
+  majSousTitre();
+  try {
+    const avecEcran = !$("ecran-appli").classList.contains("cache");
+    const echec = (msg, reconnexion) => {
+      if (reconnexion) { AUTH.seDeconnecter(); versConnexion(msg); }
+      else if (avecEcran) erreur(msg + " Les données affichées sont celles de la dernière lecture.");
+      else versConnexion(msg);
+      return false;
+    };
+    let r;
+    if (S.demo) r = await moteur.envoyer({ type: "demo" });
+    else {
+      let jeton;
+      try { jeton = await AUTH.jeton(); } catch (e) {
+        return echec(e.reconnexion ? "Votre connexion Microsoft a expiré : reconnectez-vous." : "Impossible de joindre Microsoft : vérifiez la connexion Internet.", e.reconnexion);
+      }
+      r = await moteur.envoyer({ type: "demarrer", jeton });
     }
-    r = await moteur.envoyer({ type: "demarrer", jeton });
+    if (!r.ok) return echec(r.erreur, r.reconnexion);
+    memoire.ecrire(CLE_MOTEUR_VU, true);
+    if (!avecEcran) $("attente-texte").textContent = "Lecture des classeurs…";
+    const d = await appelDirect("analyser");
+    if (!d) return echec($("bandeau").textContent || "La lecture des classeurs a échoué.");
+    recevoir(d);
+    ecran("appli");
+    afficher();
+    return true;
+  } finally {
+    S.miseAJour = false;
+    majSousTitre();
   }
-  if (!r.ok) {
-    if (r.reconnexion) AUTH.seDeconnecter();
-    return versConnexion(r.erreur);
-  }
-  $("attente-texte").textContent = "Lecture des classeurs…";
-  const d = await appel("analyser");
-  if (!d) { const msg = $("bandeau").textContent; return versConnexion(msg || "La lecture des classeurs a échoué."); }
+}
+
+function recevoir(d) {
   S.analyse = d;
-  ecran("appli");
-  afficher();
+  if (!S.demo) memoire.ecrire(CLE_ANALYSE, d);
 }
 
 async function analyser() {
   const d = await occupe("Lecture des classeurs…", () => appel("analyser"));
-  if (d) { S.analyse = d; afficher(); }
+  if (d) { recevoir(d); afficher(); }
+}
+
+function majSousTitre() {
+  if (!S.analyse) return;
+  $("sous-titre").textContent = "Analyse du " + S.analyse.date + (S.demo ? " · démonstration" : "")
+    + (S.miseAJour ? " · mise à jour…" : "");
 }
 
 /* ---------- navigation ---------- */
@@ -181,7 +247,7 @@ function allerA(vue) {
 
 function afficher() {
   const d = S.analyse;
-  $("sous-titre").textContent = "Analyse du " + d.date + (S.demo ? " · démonstration" : "");
+  majSousTitre();
   remplirDatalists();
   vueAccueil(); vueActions(); vueQuestions(); vueRisques(); vuePlan();
   allerA(S.vue);
@@ -478,7 +544,7 @@ function menu() {
       el("button", { onclick: () => { fermerFeuille(); analyser(); } }, "Relire les classeurs"),
       INSTALLEE() ? null : el("button", { onclick: () => { fermerFeuille(); installer(); } }, "Installer sur l'écran d'accueil"),
       S.demo ? el("button", { onclick: () => { location.href = location.pathname; } }, "Quitter la démonstration")
-        : el("button", { class: "rouge", onclick: () => { AUTH.seDeconnecter(); location.href = location.pathname; } }, "Se déconnecter")),
+        : el("button", { class: "rouge", onclick: () => { AUTH.seDeconnecter(); memoire.effacer(CLE_ANALYSE); location.href = location.pathname; } }, "Se déconnecter")),
     el("p", { class: "doux petit centre", style: "margin-top:12px" }, "Version " + CONFIG.version));
 }
 
