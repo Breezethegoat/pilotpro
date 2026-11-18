@@ -1,6 +1,6 @@
 /* Garde l'application et le moteur Python sur le téléphone : ouverture rapide, même avec un réseau lent.
    Les données (classeurs) ne sont jamais mises en cache : elles viennent toujours de Microsoft. */
-const VERSION = "2026.11.18-0ae24b";
+const VERSION = "2026.11.18-128262";
 const CACHE = "pilotpro-" + VERSION;
 
 self.addEventListener("install", (e) => { self.skipWaiting(); });

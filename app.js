@@ -8,6 +8,39 @@ const TITRES = { accueil: "Accueil", actions: "Actions", questions: "Questions o
 const ORDRE_NIVEAUX = ["Critique", "Élevé", "Modéré", "Faible"];
 const COULEUR_NIVEAU = { Critique: "rouge", "Élevé": "orange", "Modéré": "bleu", Faible: "vert" };
 
+/* ---------- installation sur l'écran d'accueil ---------- */
+// Chrome annonce très tôt que l'application peut s'installer : on garde l'invitation pour un vrai bouton.
+let INVITE = null;
+const INSTALLEE = () => matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+window.addEventListener("beforeinstallprompt", (e) => { e.preventDefault(); INVITE = e; majInstallation(); });
+window.addEventListener("appinstalled", () => { INVITE = null; majInstallation(); toast("PilotPro est installé : retrouvez-le sur l'écran d'accueil.", 6000); });
+
+function majInstallation() {
+  montrer("btn-installer", !!INVITE && !INSTALLEE());
+  montrer("btn-aide-install", !INSTALLEE());
+}
+
+async function installer() {
+  if (!INVITE) return aideInstallation();
+  INVITE.prompt();
+  const choix = await INVITE.userChoice;
+  if (choix.outcome !== "accepted") toast("Installation annulée.");
+  INVITE = null;
+  majInstallation();
+}
+
+function aideInstallation() {
+  feuille(el("h3", {}, "Installer PilotPro"),
+    el("p", {}, "Dans Chrome : menu ", el("b", {}, "⋮"), " (en haut à droite) → ", el("b", {}, "Installer l'application"),
+      " ou ", el("b", {}, "Ajouter à l'écran d'accueil"), ", puis choisissez ", el("b", {}, "Installer"), " (et non « Créer un raccourci »)."),
+    el("p", {}, el("b", {}, "Si aucune icône n'apparaît"), " (fréquent sur Tecno, Infinix, itel, Xiaomi) : le téléphone empêche Chrome d'ajouter des icônes. "
+      + "Ouvrez ", el("b", {}, "Paramètres → Applications → Chrome → Autorisations"), " (ou « Autres autorisations ») et autorisez ",
+      el("b", {}, "Raccourcis sur l'écran d'accueil"), ". Puis recommencez."),
+    el("p", {}, el("b", {}, "Si l'icône ouvre Chrome avec la barre d'adresse"), " : c'est un simple raccourci. Supprimez-le, mettez Chrome à jour (Play Store), puis réinstallez."),
+    el("p", { class: "doux petit" }, "L'installation se fait depuis Chrome, pas depuis le navigateur intégré du téléphone."),
+    el("div", { class: "boutons" }, el("button", { class: "principal", onclick: fermerFeuille }, "Compris")));
+}
+
 /* ---------- outils ---------- */
 const $ = (id) => document.getElementById(id);
 
@@ -443,6 +476,7 @@ function menu() {
       + "Envoi des mails, modèles, équipe et réglages : sur l'ordinateur."),
     el("div", { class: "boutons", style: "flex-direction:column" },
       el("button", { onclick: () => { fermerFeuille(); analyser(); } }, "Relire les classeurs"),
+      INSTALLEE() ? null : el("button", { onclick: () => { fermerFeuille(); installer(); } }, "Installer sur l'écran d'accueil"),
       S.demo ? el("button", { onclick: () => { location.href = location.pathname; } }, "Quitter la démonstration")
         : el("button", { class: "rouge", onclick: () => { AUTH.seDeconnecter(); location.href = location.pathname; } }, "Se déconnecter")),
     el("p", { class: "doux petit centre", style: "margin-top:12px" }, "Version " + CONFIG.version));
@@ -458,5 +492,8 @@ $("btn-q-enregistrer").onclick = enregistrerQuestions;
 $("btn-q-annuler").onclick = () => { S.modifsQ = {}; vueQuestions(); };
 $("btn-connexion").onclick = () => (AUTH.connecte() ? lancer() : AUTH.seConnecter());
 $("btn-demo").onclick = () => { location.href = location.pathname + "?demo"; };
+$("btn-installer").onclick = installer;
+$("btn-aide-install").onclick = aideInstallation;
+majInstallation();
 $("feuille").onclick = (e) => { if (e.target.id === "feuille") fermerFeuille(); };  // toucher le fond ferme la fenêtre
 demarrer();
